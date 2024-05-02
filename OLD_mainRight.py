@@ -20,7 +20,7 @@ picam2.capture_file("CAR1.jpg")
 img = cv2.imread('testLeftRight.jpg',cv2.IMREAD_COLOR)
 img = cv2.resize(img, (620,480) )
 
-# Split the image into left and right halves
+# Split the image (Right half)
 height, width, _ = img.shape
 img = img[:, width // 2:]
 height, width, _ = img.shape

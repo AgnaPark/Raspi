@@ -14,10 +14,10 @@ picam2.configure(camera_config)
 picam2.start_preview(Preview.QTGL)
 picam2.start()
 time.sleep(2)
-picam2.capture_file("CAR.jpg")
+picam2.capture_file("CAR1.jpg")
 '''
 
-img = cv2.imread('CAR.jpg',cv2.IMREAD_COLOR)
+img = cv2.imread('testLeftRight.jpg',cv2.IMREAD_COLOR)
 img = cv2.resize(img, (620,480) )
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #convert to grey scale
 gray = cv2.bilateralFilter(gray, 11, 17, 17) #Blur to reduce noise

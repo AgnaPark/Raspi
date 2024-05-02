@@ -27,7 +27,10 @@ class RoLicensePlate:
     def transition(self):
         for i in self.license_str:
             if self.state == "COUNTY":
-                if i.isalpha():
+                if i == 'O':
+                    self.state = "NUMBERS"
+                    self.numbers += str(0)
+                elif i.isalpha():
                     self.county += i
                 elif i.isdigit():
                     self.state = "NUMBERS"
@@ -72,7 +75,29 @@ class RoLicensePlate:
         return self.county in self.TEXT_CODE and len(numbers_str) == 6 and first_three_digits in self.COUNTRY_CODES
 
     def is_valid(self):
-        return self.is_valid_county_code() and self.is_valid_number_length() and self.is_valid_letters()
+        correction_flag = False
+        if(len(self.county) > 2):
+            self.county = self.county[len(self.county)-2:]
+            correction_flag = True
+            
+        if(self.is_valid_county_code()):
+            if(self.is_valid_number_length()):
+                if(len(self.letters) > 3):
+                    self.letters = self.letters[:3]
+                    correction_flag = True
+                    
+                if(self.is_valid_letters()):
+                    if (correction_flag):
+                        print(f"Corrected Number is: {self.county} {self.numbers} {self.letters}")
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
+        
+        #return self.is_valid_county_code() and self.is_valid_number_length() and self.is_valid_letters()
     
     def is_roLicensePlate(self):
         
