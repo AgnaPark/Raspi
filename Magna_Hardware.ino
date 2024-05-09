@@ -1,15 +1,18 @@
 #include <Servo.h>
+#include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
-LiquidCrystal_I2C lcd(0x3F, 16, 2);
+LiquidCrystal_I2C lcd(0x27, 20, 4); //0x27
 Servo servo;
-int angle = 10;
+int angle = 90;
 
 const int trigPinEntrance = 7;
 const int echoPinEntrance = 8;
 
 const int trigPinExit = 9;
-const int echoExit = 10;
+const int echoPinExit = 10;
+
+const int ledPin = 3;
 
 float duration1, duration2;
 float distance1, distance2;
@@ -21,27 +24,40 @@ void setup() {
   lcd.begin();
   lcd.backlight();
 
-  // Servo Setup
-  servo.attach(8);
-  servo.write(angle);
-
   // Ultrasonic Setup
-  digitalWrite(trigPin1, LOW);
-  digitalWrite(trigPin2, LOW);
+  pinMode(trigPinEntrance, OUTPUT);
+  pinMode(echoPinEntrance, INPUT);
+
+  pinMode(trigPinExit, OUTPUT);
+  pinMode(echoPinExit, INPUT);
+
+  digitalWrite(trigPinEntrance, LOW);
+  digitalWrite(trigPinExit, LOW);
+
+  // LED Setup
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, HIGH);
+  
+  // Servo Setup
+  angle = 90;
+  servo.write(angle);
 }
 
 
 void loop() 
 { 
   // Ultrasonic Signaling  
-  digitalWrite(trigPin1, HIGH);
-  digitalWrite(trigPin2, HIGH);
+  digitalWrite(trigPinEntrance, LOW);
+  digitalWrite(trigPinExit, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPinEntrance, HIGH);
+  digitalWrite(trigPinExit, HIGH);
   delayMicroseconds(10);
-  digitalWrite(trigPin1, LOW);
-  digitalWrite(trigPin2, LOW);
+  digitalWrite(trigPinEntrance, LOW);
+  digitalWrite(trigPinExit, LOW);
 
-  duration1 = pulseIn(echoPin1, HIGH);
-  duration2 = pulseIn(echoPin2, HIGH);
+  duration1 = pulseIn(echoPinEntrance, HIGH);
+  duration2 = pulseIn(echoPinExit, HIGH);
 
   distance1 = (duration1*.0343)/2;
   distance2 = (duration2*.0343)/2;
@@ -59,41 +75,44 @@ void loop()
 
   // Serial Debug
   Serial.print("Dist1: ");
-  Serial.print(distance);
+  Serial.print(distance1);
   Serial.print(" Dist2: ");
-  Serial.println(distance);
+  Serial.println(distance2);
 
   // If car at entrance
   if(distance1 < 10){
-    // move from 0 to 180 degrees
-    for(angle = 90; angle <= 180; angle++)  
-    {                                  
-      servo.write(angle);               
-      delay(15);                   
-    } 
+    // move from 90 to 180 degrees
+    for(; angle <= 180; angle++)  
+      {                                  
+        servo.write(angle);               
+        delay(15);                   
+      }             
+     
   }else{
-    // reverse from 180 to 0 degrees
-    for(angle = 180; angle >= 90; angle--)    
+    // reverse from 180 to 90 degrees   
+    for( ;angle >= 90; angle--)    
     {                                
       servo.write(angle);           
       delay(15);       
-    } 
+    }
   }
-
+/*
   // If car at exit
   if(distance2 < 10){
-    // move from 0 to 180 degrees
-    for(angle = 90; angle <= 180; angle++)  
-    {                                  
-      servo.write(angle);               
-      delay(15);                   
-    } 
+    // move from 90 to 180 degrees
+    for(; angle <= 180; angle++)  
+      {                                  
+        servo.write(angle);               
+        delay(15);                   
+      }
   }else{
     // reverse from 180 to 0 degrees
-    for(angle = 180; angle >= 90; angle--)    
+    for(; angle >= 90; angle--)    
     {                                
       servo.write(angle);           
       delay(15);       
-    } 
+    }
   }
-}
+  */
+  Serial.print(angle);
+} 
