@@ -23,8 +23,19 @@ class RoLicensePlate:
         self.county = ""
         self.numbers = ""
         self.letters = ""
+        self.correction_flag = False
 
     def transition(self):
+        
+        # Delete special characters
+        result = []
+        for char in self.license_str:
+            if char.isalnum():
+                result.append(char)
+                self.correction_flag = True
+                
+        self.license_str = ''.join(result)
+        
         for i in self.license_str:
             if self.state == "COUNTY":
                 if i == 'O':
@@ -56,7 +67,7 @@ class RoLicensePlate:
                 return len(self.numbers) == 2
 
     def is_valid_letters(self):
-        return (self.letters[0] not in ['I', 'O'] and 'Q' not in self.letters and self.letters not in ['III', 'OOO'])
+        return (self.letters[0] not in ['I', 'O'] and 'Q' not in self.letters and self.letters not in ['III', 'OOO'] and len(self.letters) == 3)
 
     def is_valid_country_code(self):
         return self.county in self.COUNTRY_CODES
@@ -75,20 +86,29 @@ class RoLicensePlate:
         return self.county in self.TEXT_CODE and len(numbers_str) == 6 and first_three_digits in self.COUNTRY_CODES
 
     def is_valid(self):
-        correction_flag = False
+        print(f"County is: {self.county}")
+        print(f"Number is: {self.numbers}")
+        print(f"letter is: {self.letters}")
+        
+        self.correction_flag = False
         if(len(self.county) > 2):
             self.county = self.county[len(self.county)-2:]
-            correction_flag = True
+            self.correction_flag = True
             
+        if(self.county == "BB"):
+            self.county = 'B'
+            self.correction_flag = True
+            
+        if(len(self.letters) > 3):
+            self.letters = self.letters[:3]
+            self.correction_flag = True
+                    
+        if (self.correction_flag):
+            print(f"Corrected Number is: {self.county} {self.numbers} {self.letters}")
+                    
         if(self.is_valid_county_code()):
             if(self.is_valid_number_length()):
-                if(len(self.letters) > 3):
-                    self.letters = self.letters[:3]
-                    correction_flag = True
-                    
                 if(self.is_valid_letters()):
-                    if (correction_flag):
-                        print(f"Corrected Number is: {self.county} {self.numbers} {self.letters}")
                     return True
                 else:
                     return False
@@ -97,7 +117,7 @@ class RoLicensePlate:
         else:
             return False
         
-        #return self.is_valid_county_code() and self.is_valid_number_length() and self.is_valid_letters()
+        #return self.is_valid_county_code() and self.is_valid_number_length() and self.()
     
     def is_roLicensePlate(self):
         
@@ -113,6 +133,10 @@ class RoLicensePlate:
             return True
         else:
             return False
-
+        
+    def number_plate_toString(self):
+        self.license_str = self.county + " " + self.numbers + " " + self.letters
+        return self.license_str
+    
     def __repr__(self):
         return f"<RoLicensePlateStateMachine county = {self.county}, numbers = {self.numbers}, letters = {self.letters}>"
