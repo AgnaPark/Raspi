@@ -44,41 +44,52 @@ picam2.configure(camera_config)
 picam2.start_preview(Preview.QTGL)
 picam2.start()
 time.sleep(2)
-picam2.capture_file("Images/CAR0_0.jpg")
-picam2.capture_file("Images/CAR0_1.jpg")
-picam2.capture_file("Images/CAR0_2.jpg")
-picam2.capture_file("Images/CAR0_3.jpg")
-picam2.capture_file("Images/CAR0_4.jpg")
-picam2.capture_file("Images/CAR0_5.jpg")
-picam2.capture_file("Images/CAR0_6.jpg")
-picam2.capture_file("Images/CAR0_7.jpg")
-picam2.capture_file("Images/CAR0_8.jpg")
-picam2.capture_file("Images/CAR0_9.jpg")
+picam2.capture_file("Images/CARpatratic0_0.jpg")
+picam2.capture_file("Images/CARpatratic0_1.jpg")
+picam2.capture_file("Images/CARpatratic0_2.jpg")
+picam2.capture_file("Images/CARpatratic0_3.jpg")
+picam2.capture_file("Images/CARpatratic0_4.jpg")
+picam2.capture_file("Images/CARpatratic0_5.jpg")
+picam2.capture_file("Images/CARpatratic0_6.jpg")
+picam2.capture_file("Images/CARpatratic0_7.jpg")
+picam2.capture_file("Images/CARpatratic0_8.jpg")
+picam2.capture_file("Images/CARpatratic0_9.jpg")
 picam2.stop_preview()
 picam2.close()
 '''
 valid_plates = []
 
-for i in range(10):
-    picture = "Images/CAR0_"+str(i)+".jpg"
+for i in range(1):
+    picture = "Images/CARpatratic0_"+str(i)+".jpg"
     print(picture)
     img = cv2.imread(picture,cv2.IMREAD_COLOR)
     #img = cv2.imread('testLeftRight.jpg',cv2.IMREAD_COLOR)
     img = cv2.resize(img, (620,480) )
+    
+    #!!!!!
+    # Split the image (left half)
+    #height, width, _ = img.shape
+    #img = img[:, :width // 2]
+    #height, width, _ = img.shape
+    #!!!!!
+    # Split the image (Right half)
+    #height, width, _ = img.shape
+    #img = img[:, width // 2:]
+    #height, width, _ = img.shape
+    #!!!!!
 
-    # Split the image (left halve)
     height, width, _ = img.shape
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #convert to grey scale
     gray = cv2.bilateralFilter(gray, 11, 17, 17) #Blur to reduce noise
     edged = cv2.Canny(gray, 30, 200) #Perform Edge detection
-
+    
     # find contours in the edged image, keep only the largest
     # ones, and initialize our screen contour
     cnts = cv2.findContours(edged.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     cnts = sorted(cnts, key = cv2.contourArea, reverse = True)[:10]
-
+    
     screenCnt = None
     # loop over our contours
 
@@ -105,35 +116,61 @@ for i in range(10):
     if detected == 1:
         cv2.drawContours(img, [screenCnt], -1, (0, 255, 0), 3)
         
-    # Masking the part other than the number plate
-    mask = np.zeros(gray.shape,np.uint8)
-    new_image = cv2.drawContours(mask,[screenCnt],0,255,-1,)
-    new_image = cv2.bitwise_and(img,img,mask=mask)
+        # Masking the part other than the number plate
+        mask = np.zeros(gray.shape,np.uint8)
+        new_image = cv2.drawContours(mask,[screenCnt],0,255,-1,)
+        new_image = cv2.bitwise_and(img,img,mask=mask)
+        
+        
 
-    # Now crop
-    (x, y) = np.where(mask == 255)
-    (topx, topy) = (np.min(x), np.min(y))
-    (bottomx, bottomy) = (np.max(x), np.max(y))
-    Cropped = gray[topx:bottomx+1, topy:bottomy+1]
+        # Now crop
+        (x, y) = np.where(mask == 255)
+        (topx, topy) = (np.min(x), np.min(y))
+        (bottomx, bottomy) = (np.max(x), np.max(y))
+        Cropped = gray[topx:bottomx+1, topy:bottomy+1]
+        cv2.imshow('image full',Cropped)
+            
+        #!!!!!!!
+        # Calculate image width and height
+        height, width = Cropped.shape
 
-    #Read the number plate
-    text = pytesseract.image_to_string(Cropped, config='--psm 11')
-    text = text[:len(text)-1]
-    print(f"Detected Number is: {text}")
+        # Calculate aspect ratio
+        aspect_ratio = float(width) / height
+
+        # Classify image based on aspect ratio
+        if aspect_ratio > 1.5:  # Adjust this threshold based on your specific shapes
+            print("Image is rectangular")
+        else:
+            print("Image is boxy")
+            # Determine the dimensions of the Cropped image
+            height, width = Cropped.shape
+
+            # Calculate the starting point for the last 80% of the columns
+            start_col = int(width * 0.2)
+
+            # Extract the last 80% of the columns
+            Cropped = Cropped[:, start_col:width]
+            cv2.imshow('image 80%',Cropped)
+            
+        #!!!!!!!!
+        
+        
+        #Read the number plate
+        personal_config = rf"--psm 11  tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz --oem 3"
+        text = pytesseract.image_to_string(Cropped, config=personal_config)
+        text = text[:len(text)-1]
+        print(f"Detected Number is: {text}")
 
 
-    plate1 = RoLicensePlate(text)
-    if(plate1.is_roLicensePlate()):
-        print(f"+Valid\n")
-        # Initialize the list with on
-        new_plate = plate1.number_plate_toString()
-        valid_plates.append(new_plate)
-    else:
-        print(f"-Invalid\n")
-#cv2.imshow('image',img)
-#cv2.imshow('Cropped',Cropped)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+        plate1 = RoLicensePlate(text)
+        if(plate1.is_roLicensePlate()):
+            print(f"+Valid\n")
+            # Initialize the list with on
+            new_plate = plate1.number_plate_toString()
+            valid_plates.append(new_plate)
+        else:
+            print(f"-Invalid\n")
+
 print(valid_plates)
 result = calculate_reoccurrence(valid_plates)
 
@@ -143,7 +180,10 @@ for plate, percentage in result['percentages'].items():
 
 # Print the highest occurrence plate
 print(f"Highest occurrence: {result['highest']}")
-
+#cv2.imshow('image',img)
+#cv2.imshow('Cropped',Cropped)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
 
 
 '''
